@@ -5,7 +5,7 @@ Automates creation of scheduled YouTube livestreams from Google Calendar events.
 ## What It Does
 
 - Fetches calendar events in the next `LOOKAHEAD_HOURS` (default: 48)
-- Filters only events whose title contains one of:
+- Filters only events whose title contains all configured keywords (default: both):
   - `Actual Education`
   - `Office Hours`
 - Creates a scheduled YouTube broadcast for each qualifying event

@@ -75,6 +75,9 @@ def run_once() -> None:
         return
 
     for event in candidates:
+        scheduled_start_iso = event.start.isoformat().replace("+00:00", "Z")
+        scheduled_end_iso = event.end.isoformat().replace("+00:00", "Z")
+
         if not event.event_id:
             logging.warning("skip_event_missing_id | title=%s", event.title)
             continue
@@ -84,6 +87,15 @@ def run_once() -> None:
                 "skip_already_processed | calendar_event_id=%s | title=%s",
                 event.event_id,
                 event.title,
+            )
+            continue
+
+        if state_store.has_scheduled_start(scheduled_start_iso):
+            logging.info(
+                "skip_duplicate_start_time | calendar_event_id=%s | title=%s | scheduled_start=%s",
+                event.event_id,
+                event.title,
+                scheduled_start_iso,
             )
             continue
 
@@ -98,8 +110,8 @@ def run_once() -> None:
                 lambda: youtube_client.create_broadcast(
                     title=stream_title,
                     description=settings.stream_description_template,
-                    scheduled_start_iso=event.start.isoformat().replace("+00:00", "Z"),
-                    scheduled_end_iso=event.end.isoformat().replace("+00:00", "Z"),
+                    scheduled_start_iso=scheduled_start_iso,
+                    scheduled_end_iso=scheduled_end_iso,
                     privacy_status=settings.youtube_privacy_status,
                     category_id=settings.youtube_category_id,
                 ),
@@ -120,7 +132,7 @@ def run_once() -> None:
                 calendar_event_id=event.event_id,
                 youtube_broadcast_id=broadcast_id,
                 event_title=event.title,
-                scheduled_start=event.start.isoformat().replace("+00:00", "Z"),
+                scheduled_start=scheduled_start_iso,
             )
 
             logging.info(

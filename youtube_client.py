@@ -1,4 +1,5 @@
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -39,8 +40,33 @@ class YouTubeSchedulerClient:
                 "Create one in Google Cloud and set YOUTUBE_CLIENT_SECRETS_FILE."
             )
 
-        flow = InstalledAppFlow.from_client_secrets_file(str(self.client_secrets_file), SCOPES)
-        creds = flow.run_local_server(port=0)
+        # Always use a headless/manual OAuth flow to avoid localhost callback issues.
+        manual_flow = InstalledAppFlow.from_client_secrets_file(
+            str(self.client_secrets_file),
+            SCOPES,
+            redirect_uri="http://localhost",
+        )
+        auth_url, _ = manual_flow.authorization_url(
+            access_type="offline",
+            include_granted_scopes="true",
+            prompt="consent",
+        )
+        print("Open this URL in any browser and authorize the app:")
+        print(auth_url)
+        print(
+            "After approval, copy the FULL redirected URL "
+            "(it starts with http://localhost/?code=...) and paste it below."
+        )
+        redirected_url = input("Paste redirected URL here: ").strip()
+        parsed = urlparse(redirected_url)
+        code = parse_qs(parsed.query).get("code", [None])[0]
+        if not code:
+            raise RuntimeError(
+                "Could not find an OAuth code in the pasted URL. "
+                "Expected something like http://localhost/?code=...&state=..."
+            )
+        manual_flow.fetch_token(code=code)
+        creds = manual_flow.credentials
         self._save_credentials(creds)
         return creds
 

@@ -36,6 +36,15 @@ class StateStore:
         payload = self._read()
         return calendar_event_id in payload["processed_events"]
 
+    def has_scheduled_start(self, scheduled_start: str) -> bool:
+        payload = self._read()
+        for event_data in payload["processed_events"].values():
+            if not isinstance(event_data, dict):
+                continue
+            if event_data.get("scheduled_start") == scheduled_start:
+                return True
+        return False
+
     def record_event(
         self,
         calendar_event_id: str,

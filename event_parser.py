@@ -40,8 +40,10 @@ class EventParser:
         return sorted(matching, key=lambda ev: ev.start)
 
     def _matches_title(self, title: str) -> bool:
+        if not self.title_keywords:
+            return False
         normalized = title.lower()
-        return any(keyword in normalized for keyword in self.title_keywords)
+        return all(keyword in normalized for keyword in self.title_keywords)
 
     @staticmethod
     def _parse(event: CalendarEvent) -> ParsedEvent | None:
