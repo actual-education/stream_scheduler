@@ -99,8 +99,8 @@ def load_settings() -> Settings:
         youtube_channel_id=_env("YOUTUBE_CHANNEL_ID"),
         youtube_privacy_status=_env("YOUTUBE_PRIVACY_STATUS", "public") or "public",
         youtube_category_id=_env("YOUTUBE_CATEGORY_ID", "27") or "27",
-        poll_interval_hours=int(_env("POLL_INTERVAL_HOURS", "12") or "12"),
-        lookahead_hours=int(_env("LOOKAHEAD_HOURS", "48") or "48"),
+        poll_interval_hours=int(_env("POLL_INTERVAL_HOURS", "4") or "4"),
+        lookahead_hours=int(_env("LOOKAHEAD_HOURS", "12") or "12"),
         title_keywords=_split_keywords(
             _env("EVENT_TITLE_KEYWORDS", "Actual Education,Office Hours")
         ),

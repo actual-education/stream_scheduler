@@ -74,7 +74,19 @@ def run_once() -> None:
         logging.info("no_matching_events_found")
         return
 
+    scheduling_window = timedelta(hours=12)
+
     for event in candidates:
+        time_until_start = event.start - now
+        if time_until_start > scheduling_window:
+            logging.info(
+                "skip_too_far_in_future | calendar_event_id=%s | title=%s | starts_in_hours=%.2f",
+                event.event_id,
+                event.title,
+                time_until_start.total_seconds() / 3600,
+            )
+            continue
+
         scheduled_start_iso = event.start.isoformat().replace("+00:00", "Z")
         scheduled_end_iso = event.end.isoformat().replace("+00:00", "Z")
 

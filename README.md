@@ -4,7 +4,8 @@ Automates creation of scheduled YouTube livestreams from Google Calendar events.
 
 ## What It Does
 
-- Fetches calendar events in the next `LOOKAHEAD_HOURS` (default: 48)
+- Fetches calendar events in the next `LOOKAHEAD_HOURS` (default: 12)
+- Only schedules streams when the start time is within 12 hours
 - Filters only events whose title contains all configured keywords (default: both):
   - `Actual Education`
   - `Office Hours`
@@ -54,10 +55,10 @@ python3 scheduler.py
 
 On first run, OAuth will open a browser for consent and store token at `data/youtube_token.json`.
 
-## Cron (Every 12 Hours)
+## Cron (Every 4 Hours)
 
 ```cron
-0 */12 * * * cd /path/to/repo/stream_scheduler && /path/to/repo/stream_scheduler/.venv/bin/python scheduler.py >> logs/cron.log 2>&1
+0 */4 * * * cd /path/to/repo/stream_scheduler && /path/to/repo/stream_scheduler/.venv/bin/python scheduler.py >> logs/cron.log 2>&1
 ```
 
 ## Notes
