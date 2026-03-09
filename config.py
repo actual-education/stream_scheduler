@@ -17,6 +17,8 @@ class Settings:
     youtube_channel_id: str
     youtube_privacy_status: str
     youtube_category_id: str
+    youtube_enable_monetization: bool
+    youtube_monetization_optimization: str
     poll_interval_hours: int
     lookahead_hours: int
     title_keywords: tuple[str, ...]
@@ -34,6 +36,11 @@ class Settings:
 
 def _env(name: str, default: str = "") -> str:
     return os.getenv(name, default).strip()
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    raw = _env(name, "true" if default else "false").lower()
+    return raw in {"1", "true", "yes", "on"}
 
 
 def _resolve_path(path_value: str, fallback: Path) -> Path:
@@ -99,6 +106,10 @@ def load_settings() -> Settings:
         youtube_channel_id=_env("YOUTUBE_CHANNEL_ID"),
         youtube_privacy_status=_env("YOUTUBE_PRIVACY_STATUS", "public") or "public",
         youtube_category_id=_env("YOUTUBE_CATEGORY_ID", "27") or "27",
+        youtube_enable_monetization=_env_bool("YOUTUBE_ENABLE_MONETIZATION", True),
+        youtube_monetization_optimization=(
+            _env("YOUTUBE_MONETIZATION_OPTIMIZATION", "MEDIUM").upper() or "MEDIUM"
+        ),
         poll_interval_hours=int(_env("POLL_INTERVAL_HOURS", "4") or "4"),
         lookahead_hours=int(_env("LOOKAHEAD_HOURS", "12") or "12"),
         title_keywords=_split_keywords(
@@ -132,6 +143,11 @@ def validate_settings(settings: Settings) -> None:
 
     if missing:
         raise ValueError(f"Missing required environment variables: {', '.join(missing)}")
+
+    if settings.youtube_monetization_optimization not in {"LOW", "MEDIUM", "HIGH"}:
+        raise ValueError(
+            "YOUTUBE_MONETIZATION_OPTIMIZATION must be one of: LOW, MEDIUM, HIGH"
+        )
 
     settings.state_file.parent.mkdir(parents=True, exist_ok=True)
     settings.log_file.parent.mkdir(parents=True, exist_ok=True)

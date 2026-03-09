@@ -60,3 +60,14 @@ class StateStore:
             "creation_timestamp": datetime.now(timezone.utc).isoformat(),
         }
         self._write(payload)
+
+    def get_event(self, calendar_event_id: str) -> dict[str, Any] | None:
+        payload = self._read()
+        event_data = payload["processed_events"].get(calendar_event_id)
+        return event_data if isinstance(event_data, dict) else None
+
+    def delete_event(self, calendar_event_id: str) -> None:
+        payload = self._read()
+        if calendar_event_id in payload["processed_events"]:
+            del payload["processed_events"][calendar_event_id]
+            self._write(payload)

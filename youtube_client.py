@@ -132,6 +132,41 @@ class YouTubeSchedulerClient:
 
         return broadcast_id
 
+    def enable_broadcast_monetization(
+        self,
+        *,
+        broadcast_id: str,
+        optimization_mode: str,
+    ) -> None:
+        self.service.liveBroadcasts().update(
+            part="id,monetizationDetails",
+            body={
+                "id": broadcast_id,
+                "monetizationDetails": {
+                    "adsMonetizationStatus": "on",
+                    "cuepointSchedule": {
+                        "enabled": True,
+                        "ytOptimizedCuepointConfig": optimization_mode,
+                    },
+                },
+            },
+        ).execute()
+
+    def broadcast_exists(self, broadcast_id: str) -> bool:
+        if not broadcast_id:
+            return False
+
+        response = (
+            self.service.liveBroadcasts()
+            .list(
+                part="id",
+                id=broadcast_id,
+                maxResults=1,
+            )
+            .execute()
+        )
+        return bool(response.get("items"))
+
     def bind_broadcast_to_stream(self, *, broadcast_id: str, stream_id: str) -> None:
         self.service.liveBroadcasts().bind(
             part="id,contentDetails",

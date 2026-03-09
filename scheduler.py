@@ -95,12 +95,26 @@ def run_once() -> None:
             continue
 
         if state_store.has_event(event.event_id):
-            logging.info(
-                "skip_already_processed | calendar_event_id=%s | title=%s",
-                event.event_id,
-                event.title,
-            )
-            continue
+            recorded_event = state_store.get_event(event.event_id) or {}
+            recorded_broadcast_id = recorded_event.get("youtube_broadcast_id", "")
+            if recorded_broadcast_id and not run_with_retries(
+                lambda: youtube_client.broadcast_exists(recorded_broadcast_id),
+                max_retries=settings.max_retries,
+                base_delay_seconds=settings.retry_base_seconds,
+            ):
+                logging.warning(
+                    "stale_state_missing_broadcast | calendar_event_id=%s | youtube_broadcast_id=%s | action=delete_state_and_reschedule",
+                    event.event_id,
+                    recorded_broadcast_id,
+                )
+                state_store.delete_event(event.event_id)
+            else:
+                logging.info(
+                    "skip_already_processed | calendar_event_id=%s | title=%s",
+                    event.event_id,
+                    event.title,
+                )
+                continue
 
         if state_store.has_scheduled_start(scheduled_start_iso):
             logging.info(
@@ -139,6 +153,16 @@ def run_once() -> None:
                 max_retries=settings.max_retries,
                 base_delay_seconds=settings.retry_base_seconds,
             )
+
+            if settings.youtube_enable_monetization:
+                run_with_retries(
+                    lambda: youtube_client.enable_broadcast_monetization(
+                        broadcast_id=broadcast_id,
+                        optimization_mode=settings.youtube_monetization_optimization,
+                    ),
+                    max_retries=settings.max_retries,
+                    base_delay_seconds=settings.retry_base_seconds,
+                )
 
             state_store.record_event(
                 calendar_event_id=event.event_id,
