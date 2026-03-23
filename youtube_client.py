@@ -1,6 +1,7 @@
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+from google.auth.exceptions import RefreshError
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -20,20 +21,7 @@ class YouTubeSchedulerClient:
         self.token_file = token_file
         self._service = None
 
-    def _credentials(self) -> Credentials:
-        creds = None
-
-        if self.token_file.exists():
-            creds = Credentials.from_authorized_user_file(str(self.token_file), SCOPES)
-
-        if creds and creds.valid:
-            return creds
-
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-            self._save_credentials(creds)
-            return creds
-
+    def _run_manual_oauth_flow(self) -> Credentials:
         if not self.client_secrets_file.exists():
             raise RuntimeError(
                 f"Client secrets file not found at {self.client_secrets_file}. "
@@ -69,6 +57,25 @@ class YouTubeSchedulerClient:
         creds = manual_flow.credentials
         self._save_credentials(creds)
         return creds
+
+    def _credentials(self) -> Credentials:
+        creds = None
+
+        if self.token_file.exists():
+            creds = Credentials.from_authorized_user_file(str(self.token_file), SCOPES)
+
+        if creds and creds.valid:
+            return creds
+
+        if creds and creds.expired and creds.refresh_token:
+            try:
+                creds.refresh(Request())
+                self._save_credentials(creds)
+                return creds
+            except RefreshError:
+                pass
+
+        return self._run_manual_oauth_flow()
 
     def _save_credentials(self, creds: Credentials) -> None:
         self.token_file.parent.mkdir(parents=True, exist_ok=True)

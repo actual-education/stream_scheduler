@@ -20,6 +20,7 @@ Automates creation of scheduled YouTube livestreams from Google Calendar events.
 ## Files
 
 - `scheduler.py`: main executable
+- `reAuth.py`: one-time YouTube OAuth repair helper
 - `calendar_client.py`: Google Calendar API fetcher
 - `youtube_client.py`: YouTube broadcast create/bind
 - `event_parser.py`: event filtering and time parsing
@@ -55,6 +56,26 @@ python3 scheduler.py
 
 On first run, OAuth will open a browser for consent and store token at `data/youtube_token.json`.
 
+## Re-Auth If YouTube Fails
+
+If `logs/stream_scheduler.log` shows an error like `invalid_grant: Token has been expired or revoked.`, refresh the YouTube OAuth token manually:
+
+```bash
+.venv/bin/python reAuth.py
+```
+
+The script will print a Google authorization URL. Open it, approve access, then paste the full redirected `http://localhost/?code=...` URL back into the prompt. A successful run ends with:
+
+```text
+YouTube auth OK
+```
+
+After that, rerun the scheduler once to verify recovery:
+
+```bash
+.venv/bin/python scheduler.py
+```
+
 ## Cron (Every 4 Hours)
 
 ```cron
@@ -67,3 +88,4 @@ On first run, OAuth will open a browser for consent and store token at `data/you
 - API retries are automatic (`MAX_RETRIES`, exponential backoff).
 - All-day events are ignored.
 - If template files are missing/empty, `.env` values are used as fallback.
+- If a stored YouTube refresh token is revoked, the client now falls back to the manual OAuth flow instead of failing permanently.
