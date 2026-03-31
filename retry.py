@@ -14,7 +14,9 @@ def run_with_retries(
     while True:
         try:
             return func()
-        except Exception:
+        except Exception as exc:
+            if getattr(exc, "retryable", True) is False:
+                raise
             attempt += 1
             if attempt >= max_retries:
                 raise

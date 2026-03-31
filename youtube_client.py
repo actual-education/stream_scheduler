@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
@@ -8,6 +9,12 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
 SCOPES = ["https://www.googleapis.com/auth/youtube"]
+
+
+class AuthRequiredError(RuntimeError):
+    """Raised when YouTube OAuth needs manual re-authentication."""
+
+    retryable = False
 
 
 class YouTubeSchedulerClient:
@@ -28,6 +35,13 @@ class YouTubeSchedulerClient:
                 "Create one in Google Cloud and set YOUTUBE_CLIENT_SECRETS_FILE."
             )
 
+        if not sys.stdin.isatty():
+            raise AuthRequiredError(
+                "YouTube OAuth token is missing or expired and this run is non-interactive. "
+                "Run `.venv/bin/python reAuth.py` in a terminal to refresh credentials, "
+                "then rerun the scheduler."
+            )
+
         # Always use a headless/manual OAuth flow to avoid localhost callback issues.
         manual_flow = InstalledAppFlow.from_client_secrets_file(
             str(self.client_secrets_file),
@@ -45,7 +59,13 @@ class YouTubeSchedulerClient:
             "After approval, copy the FULL redirected URL "
             "(it starts with http://localhost/?code=...) and paste it below."
         )
-        redirected_url = input("Paste redirected URL here: ").strip()
+        try:
+            redirected_url = input("Paste redirected URL here: ").strip()
+        except EOFError as exc:
+            raise AuthRequiredError(
+                "YouTube OAuth re-authentication was started but no redirected URL was provided. "
+                "Run `.venv/bin/python reAuth.py` in an interactive terminal and complete the prompt."
+            ) from exc
         parsed = urlparse(redirected_url)
         code = parse_qs(parsed.query).get("code", [None])[0]
         if not code:
