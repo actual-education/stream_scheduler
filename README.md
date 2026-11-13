@@ -11,6 +11,8 @@ Automates creation of scheduled YouTube livestreams from Google Calendar events.
   - `Office Hours`
 - Creates a scheduled YouTube broadcast for each qualifying event
 - Binds the broadcast to your persistent stream key (`YOUTUBE_STREAM_ID`)
+- If `YOUTUBE_VERTICAL_STREAM_ID` is set, also creates a second broadcast per event bound to that key, titled with `VERTICAL_TITLE_SUFFIX` (default " (Vertical)")
+- Skips a stream key that no longer exists, and deletes a new broadcast if binding it fails (no orphan duplicates)
 - Loads stream title/description from:
   - `streamTitle.txt`
   - `streamDescription.txt`

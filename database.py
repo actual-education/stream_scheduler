@@ -36,10 +36,13 @@ class StateStore:
         payload = self._read()
         return calendar_event_id in payload["processed_events"]
 
-    def has_scheduled_start(self, scheduled_start: str) -> bool:
+    def has_scheduled_start(self, scheduled_start: str, variant: str = "horizontal") -> bool:
         payload = self._read()
         for event_data in payload["processed_events"].values():
             if not isinstance(event_data, dict):
+                continue
+            # Entries written before vertical support have no variant: they are horizontal.
+            if event_data.get("variant", "horizontal") != variant:
                 continue
             if event_data.get("scheduled_start") == scheduled_start:
                 return True
@@ -51,9 +54,11 @@ class StateStore:
         youtube_broadcast_id: str,
         event_title: str,
         scheduled_start: str,
+        variant: str = "horizontal",
     ) -> None:
         payload = self._read()
         payload["processed_events"][calendar_event_id] = {
+            "variant": variant,
             "youtube_broadcast_id": youtube_broadcast_id,
             "event_title": event_title,
             "scheduled_start": scheduled_start,

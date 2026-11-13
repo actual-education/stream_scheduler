@@ -14,6 +14,8 @@ class Settings:
     youtube_client_secrets_file: Path
     youtube_token_file: Path
     youtube_stream_id: str
+    youtube_vertical_stream_id: str
+    vertical_title_suffix: str
     youtube_channel_id: str
     youtube_privacy_status: str
     youtube_category_id: str
@@ -103,6 +105,8 @@ def load_settings() -> Settings:
             base_dir / "data" / "youtube_token.json",
         ),
         youtube_stream_id=_env("YOUTUBE_STREAM_ID"),
+        youtube_vertical_stream_id=_env("YOUTUBE_VERTICAL_STREAM_ID"),
+        vertical_title_suffix=os.getenv("VERTICAL_TITLE_SUFFIX", " (Vertical)"),
         youtube_channel_id=_env("YOUTUBE_CHANNEL_ID"),
         youtube_privacy_status=_env("YOUTUBE_PRIVACY_STATUS", "public") or "public",
         youtube_category_id=_env("YOUTUBE_CATEGORY_ID", "27") or "27",

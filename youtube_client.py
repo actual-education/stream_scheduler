@@ -255,3 +255,16 @@ class YouTubeSchedulerClient:
                 "contentDetails": content_details,
             },
         ).execute()
+
+    def stream_exists(self, stream_id: str) -> bool:
+        if not stream_id:
+            return False
+        response = (
+            self.service.liveStreams()
+            .list(part="id", id=stream_id, maxResults=1)
+            .execute()
+        )
+        return bool(response.get("items"))
+
+    def delete_broadcast(self, broadcast_id: str) -> None:
+        self.service.liveBroadcasts().delete(id=broadcast_id).execute()
