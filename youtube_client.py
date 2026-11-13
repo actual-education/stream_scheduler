@@ -116,7 +116,21 @@ class YouTubeSchedulerClient:
         scheduled_end_iso: str,
         privacy_status: str,
         category_id: str,
+        latency_preference: str | None = None,
+        enable_dvr: bool = True,
     ) -> str:
+        content_details = {
+            "enableAutoStart": False,
+            "enableAutoStop": False,
+            "enableDvr": enable_dvr,
+            "recordFromStart": True,
+            "monitorStream": {
+                "enableMonitorStream": False,
+            },
+        }
+        if latency_preference:
+            content_details["latencyPreference"] = latency_preference
+
         request = self.service.liveBroadcasts().insert(
             part="snippet,status,contentDetails",
             body={
@@ -130,15 +144,7 @@ class YouTubeSchedulerClient:
                     "privacyStatus": privacy_status,
                     "selfDeclaredMadeForKids": False,
                 },
-                "contentDetails": {
-                    "enableAutoStart": False,
-                    "enableAutoStop": False,
-                    "enableDvr": True,
-                    "recordFromStart": True,
-                    "monitorStream": {
-                        "enableMonitorStream": False,
-                    },
-                },
+                "contentDetails": content_details,
             },
         )
         response = request.execute()
@@ -199,4 +205,53 @@ class YouTubeSchedulerClient:
             part="id,contentDetails",
             id=broadcast_id,
             streamId=stream_id,
+        ).execute()
+
+    def update_broadcast_latency(
+        self,
+        *,
+        broadcast_id: str,
+        latency_preference: str,
+        enable_dvr: bool | None = None,
+    ) -> None:
+        response = (
+            self.service.liveBroadcasts()
+            .list(
+                part="id,snippet,status,contentDetails",
+                id=broadcast_id,
+                maxResults=1,
+            )
+            .execute()
+        )
+        items = response.get("items", [])
+        if not items:
+            raise RuntimeError(f"Broadcast not found: {broadcast_id}")
+
+        item = items[0]
+        existing_content_details = item.get("contentDetails", {})
+        existing_monitor_stream = existing_content_details.get("monitorStream", {})
+        content_details = {
+            "monitorStream": {
+                "enableMonitorStream": existing_monitor_stream.get("enableMonitorStream", False),
+                "broadcastStreamDelayMs": existing_monitor_stream.get("broadcastStreamDelayMs", 0),
+            },
+            "enableAutoStart": existing_content_details.get("enableAutoStart", False),
+            "enableAutoStop": existing_content_details.get("enableAutoStop", False),
+            "enableClosedCaptions": existing_content_details.get("enableClosedCaptions", False),
+            "enableDvr": existing_content_details.get("enableDvr", True),
+            "enableEmbed": existing_content_details.get("enableEmbed", True),
+            "recordFromStart": existing_content_details.get("recordFromStart", True),
+        }
+        content_details["latencyPreference"] = latency_preference
+        if enable_dvr is not None:
+            content_details["enableDvr"] = enable_dvr
+
+        self.service.liveBroadcasts().update(
+            part="id,snippet,status,contentDetails",
+            body={
+                "id": broadcast_id,
+                "snippet": item["snippet"],
+                "status": item["status"],
+                "contentDetails": content_details,
+            },
         ).execute()
